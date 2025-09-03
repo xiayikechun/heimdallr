@@ -1,0 +1,96 @@
+services:
+  # Optional MySQL database - can be disabled by setting USE_MYSQL=false
+  mysql:
+    image: mysql:8.0
+    container_name: heimdallr-mysql-prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-heimdallr_root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-heimdallr}
+      MYSQL_USER: ${MYSQL_USER:-heimdallr}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-heimdallr_password}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+    profiles:
+      - mysql
+    networks:
+      - heimdallr-network
+
+  # Backend FastAPI service
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        - HEIMDALLR_VERSION=${HEIMDALLR_VERSION:-3.0.0}
+        - COMMIT_ID=${COMMIT_ID:-prod}
+    container_name: heimdallr-backend-prod
+    environment:
+      - DEBUG=false
+      - PORT=9000
+      - WORKERS=${WORKERS:-2}
+      - DATABASE_DSN=${DATABASE_DSN:-sqlite:////app/data/heimdallr.db}
+      - SECRET_KEY=${SECRET_KEY}
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      # SQLite data directory (only used if not using MySQL)
+      - ./data/sqlite:/app/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    networks:
+      - heimdallr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend build and serve through nginx
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: heimdallr-frontend-build
+    environment:
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=/api
+      - VITE_DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - frontend-dist:/app/dist
+
+  # Nginx reverse proxy and static file server
+  nginx:
+    image: nginx:alpine
+    container_name: heimdallr-nginx-prod
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - frontend-dist:/usr/share/nginx/html:ro
+      - ./data/ssl:/etc/nginx/ssl:ro  # SSL certificates (optional)
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+      - heimdallr-network
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+
+volumes:
+  frontend-dist:
+
+networks:
+  heimdallr-network:
+    driver: bridge

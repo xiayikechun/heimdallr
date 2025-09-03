@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "heimdallr"
+version = "v3.0.0"
+description = ""
+authors = ["Leslie Leung <lesily9@gmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.116.0"
+uvicorn = "^0.35.0"
+requests = "^2.32.0"
+python-multipart = "^0.0.20"
+types-requests = "^2.31.0.20240125"
+apprise = "^1.7.4"
+filetype = "^1.2.0"
+sqlalchemy = "^2.0.0"
+alembic = "^1.13.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+pymysql = "^1.1.0"
+environs = "^11.0.0"
+packaging = "^25.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.0"
+black = "^25.0.0"
+isort = "^6.0.0"
+autoflake = "^2.2.1"
+memray = "^1.11.0"
+
+[tool.isort]
+profile = "black"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

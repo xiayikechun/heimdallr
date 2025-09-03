@@ -1,0 +1,72 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: heimdallr-mysql-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: heimdallr_root_password
+      MYSQL_DATABASE: heimdallr
+      MYSQL_USER: heimdallr
+      MYSQL_PASSWORD: heimdallr_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        - HEIMDALLR_VERSION=${HEIMDALLR_VERSION:-3.0.0}
+        - COMMIT_ID=${COMMIT_ID:-dev}
+    container_name: heimdallr-backend-dev
+    ports:
+      - "9000:9000"
+    environment:
+      - DEBUG=true
+      - PORT=9000
+      - WORKERS=1
+      - DATABASE_DSN=mysql+pymysql://heimdallr:heimdallr_password@mysql:3306/heimdallr
+      - SECRET_KEY=dev_secret_key_change_in_production
+      - PYTHONPATH=/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ../backend:/app:rw
+      - /app/.venv  # Exclude virtual environment from volume mount
+    command: >
+      sh -c "
+        poetry install --no-cache &&
+        python main.py
+      "
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: heimdallr-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost:9000
+    volumes:
+      - ../frontend:/app:rw
+      - /app/node_modules  # Exclude node_modules from volume mount
+    depends_on:
+      - backend
+    command: >
+      sh -c "
+        pnpm install &&
+        pnpm dev --host 0.0.0.0
+      "
+    restart: unless-stopped

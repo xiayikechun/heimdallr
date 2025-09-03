@@ -1,8 +1,9 @@
 .idea
 .vscode
+.cursor
+.claude
 .DS_Store
 venv
-config/config.json
 .env
 
 # Byte-compiled / optimized / DLL files
@@ -12,3 +13,6 @@ __pycache__/
 
 .mypy_cache
 *.bin
+
+# Deploy data directory
+deploy/data/
