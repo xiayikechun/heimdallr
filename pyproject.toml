@@ -1,3 +1,22 @@
+[project]
+name = "heimdallr"
+version = "v1.2.4"
+description = ""
+authors = [{name = "Leslie Leung", email = "lesily9@gmail.com"}]
+license = {text = "GPL-3.0"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.116.0,<0.117.0",
+    "uvicorn>=0.35.0,<0.36.0",
+    "requests>=2.32.0,<3.0.0",
+    "python-multipart>=0.0.20,<0.1.0",
+    "environs>=14.0.0,<15.0.0",
+    "types-requests>=2.31.0.20240125,<3.0.0",
+    "apprise>=1.7.4,<2.0.0",
+    "filetype>=1.2.0,<2.0.0",
+]
+
 [tool.poetry]
 name = "heimdallr"
 version = "v1.2.4"
@@ -18,7 +37,6 @@ types-requests = "^2.31.0.20240125"
 apprise = "^1.7.4"
 filetype = "^1.2.0"
 
-
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.0.0"
 black = "^25.0.0"
@@ -28,7 +46,6 @@ memray = "^1.11.0"
 
 [tool.isort]
 profile = "black"
-
 
 [build-system]
 requires = ["poetry-core"]
